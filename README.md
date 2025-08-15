@@ -195,3 +195,110 @@ A: Caching function results to avoid recomputation.
 A: For managing complex app states with interconnected entities.
 
 ---
+
+
+## 1. How does HTTP interceptor work under the hood in Angular?
+
+HTTP Interceptors in Angular act like a pipeline that every HTTP request and response travels through. They allow you to:
+- Modify requests before they are sent (e.g., add headers).
+- Log or transform responses.
+- Handle errors globally.
+
+Flow:
+1. Request leaves your component/service.
+2. Passes through each interceptor in sequence.
+3. The last handler sends it to the backend via `fetch` or `XMLHttpRequest`.
+4. Response passes back through interceptors in reverse order.
+
+Visual:
+```
+Your Code → Interceptor 1 → Interceptor 2 → BackendHandler → (server)
+    ↑                                                      ↓
+   Response ← Interceptor 2 ← Interceptor 1 ← BackendHandler
+```
+
+---
+
+## 2. What is `forwardRef` in Angular?
+
+`forwardRef` is used to reference classes before they are defined, often to resolve circular dependencies.
+
+Example:
+```ts
+constructor(@Inject(forwardRef(() => ChildService)) private child: ChildService) {}
+```
+It delays resolution until runtime, breaking circular dependency chains.
+
+---
+
+## 3. How does `forwardRef` pair up with the injector?
+
+Angular's injector always runs `resolveForwardRef()` before dependency resolution:
+- If the token is a normal class → use it directly.
+- If the token is a `forwardRef` wrapper → execute its function to get the real class.
+
+This ensures classes can be referenced before they are defined.
+
+---
+
+## 4. What is `APP_INITIALIZER` in Angular?
+
+`APP_INITIALIZER` is a special Angular injection token for registering functions to run **before** the app bootstraps. Angular waits for these (and any returned Promises) to resolve before loading the root component.
+
+Example use case: Load configuration from the server before rendering.
+
+---
+
+## 5. Signals in Angular
+
+Signals are reactive values introduced in Angular 16+:
+- Hold data and notify Angular when they change.
+- Used with `computed` for derived values and `effect` for side effects.
+- Replace some uses of Observables for local state.
+
+Example:
+```ts
+count = signal(0);
+double = computed(() => count() * 2);
+effect(() => console.log(count()));
+```
+
+---
+
+## 6. How Angular tracks dependencies between signals
+
+Angular internally uses a reactivity graph:
+- Nodes: signals, computed values, effects.
+- Edges: "depends on" relationships.
+When a signal is read inside a consumer (computed, effect, template binding), Angular records the dependency. When the signal changes, Angular re-runs only affected consumers.
+
+---
+
+## 7. Reactive Forms in Angular
+
+Reactive Forms are a model-driven approach to handling form inputs.
+- `FormControl`: Single input.
+- `FormGroup`: Group of named controls.
+- `FormArray`: List of controls.
+
+They are fully defined in the component class and emit observable streams for value and status changes.
+
+---
+
+## 8. Updating values in Reactive Forms
+
+- `setValue()` → Requires all fields.
+- `patchValue()` → Updates specific fields.
+- `.updateValueAndValidity()` → Forces validation after an update.
+
+---
+
+## 9. Difference between `FormControl`, `FormGroup`, `FormArray`
+
+| Feature       | FormControl | FormGroup         | FormArray        |
+|---------------|-------------|-------------------|------------------|
+| Holds         | Single value| Object of controls| Array of controls|
+| Use case      | Single input| Related inputs    | Dynamic list     |
+| Access by     | `.value`    | `.get(name)`      | `.at(index)`     |
+| Shape         | Primitive   | Object            | Array            |
+| Dynamic size? | No          | No                | Yes              |
